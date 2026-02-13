@@ -1,15 +1,23 @@
 cmake_minimum_required(VERSION 3.20)
 project(learnCpp)
 set(subDir Cpp_11_14_Houjie)
-# set(targetDir ${subDir}/1_Start)
-# set(targetDir ${subDir}/2_VariadicTemplate)
+# set(targetDir ${subDir}/1_start)
+# set(targetDir ${subDir}/2_variadicTemplate)
 # set(targetDir ${subDir}/3_nullptr_auto)
 # set(targetDir ${subDir}/4_uniformInitialization)
 # set(targetDir ${subDir}/5_initializerList)
-# set(targetDir ${subDir}/6_ExplicitCtors)
-set(targetDir ${subDir}/7_rangeBasedForStatement)
+# set(targetDir ${subDir}/6_explicitCtors)
+# set(targetDir ${subDir}/7_rangeBasedForStatement)
+set(targetDir ${subDir}/8_defaultAndDeleteInClass)
+
 
 
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 add_subdirectory(${CMAKE_SOURCE_DIR}/${targetDir})
+
+# set(CPP_11_14_HOUJIE_DIR ${CMAKE_SOURCE_DIR}/${subDir})
+# file(GLOB CPP_11_14_HOUJIE_SUBDIR RELATIVE ${CPP_11_14_HOUJIE_DIR} ${CPP_11_14_HOUJIE_DIR}/*)
+# foreach(CPP_11_14_HOUJIE_FILE ${CPP_11_14_HOUJIE_SUBDIR})
+#     message(STATUS ${CPP_11_14_HOUJIE_FILE})
+# endforeach()
