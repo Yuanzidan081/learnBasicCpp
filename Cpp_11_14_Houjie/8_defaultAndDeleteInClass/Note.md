@@ -216,3 +216,7 @@ int main() {
 - `delete`：禁止特定函数的生成或调用，实现“只移动”“禁止拷贝”“强制带参构造”等设计意图。
 
 在现代C++类设计中，合理使用这两个关键字可提升代码的可读性、安全性和性能，是侯捷老师强调的“现代C++类设计规范”的重要组成部分。
+
++ 8_defaultAndDeleteInClass测试
+
+![](./image/resultDefaultAndDeleteInClass.png)
