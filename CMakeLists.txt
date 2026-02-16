@@ -9,8 +9,8 @@ set(subDir Cpp_11_14_Houjie)
 # set(targetDir ${subDir}/6_explicitCtors)
 # set(targetDir ${subDir}/7_rangeBasedForStatement)
 # set(targetDir ${subDir}/8_defaultAndDeleteInClass)
-set(targetDir ${subDir}/9_AliasTemplate)
-
+# set(targetDir ${subDir}/9_AliasTemplate)
+set(targetDir ${subDir}/10_templateTemplateParameter)
 
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
