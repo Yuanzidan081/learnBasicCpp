@@ -128,7 +128,8 @@ public:
     template <typename T>
     void conditional_noexcept(T &&val) noexcept(std::is_trivially_copyable<T>::value)
     {
-        std::cout << "Conditional noexcept function called" << std::endl;
+        bool is_noexcept = std::is_trivially_copyable<T>::value;
+        std::cout << "Conditional noexcept function called - noexcept: " << std::boolalpha << is_noexcept << std::endl;
     }
 };
 
