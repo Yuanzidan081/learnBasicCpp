@@ -25,6 +25,13 @@ void set_console_utf8() {}
  * 2. 工作在未求值上下文：仅推导类型，不执行表达式
  * 3. 双层括号(())会将普通变量推导为左值引用
  */
+
+struct Person
+{
+    std::string lastName;
+    std::string firstName;
+    Person(std::string ln, std::string fn) : lastName(ln), firstName(fn) {}
+};
 void basic_decltype_deduction()
 {
     std::cout << "===== 1. 基础推导规则 =====" << std::endl;
@@ -60,8 +67,8 @@ void basic_decltype_deduction()
     decltype(coll)::value_type elem = {"test", 3.14f};
     std::cout << "elem type: pair<const string, float>，值：" << elem.first << " " << elem.second << std::endl;
 
-    auto cmp = [](const int &x, const int &y)
-    { return x < y; };
+    auto cmp = [](const Person &x, const Person &y)
+    { return x.lastName < y.lastName || (x.lastName == y.lastName && x.firstName < y.firstName); };
     std::map<int, std::string, decltype(cmp)> sorted_map(cmp); // 用Lambda表达式作为比较器
     std::cout << std::endl;
 }
