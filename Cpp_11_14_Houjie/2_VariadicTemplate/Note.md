@@ -3,24 +3,24 @@ C++的可变参数模板（Variadic Templates）是C++11引入的强大特性，
 
 ### **基本概念**
 1. **可变参数模板参数包（Parameter Pack）**
-   - **模板参数包**：用 `...` 表示，允许模板接受任意数量的类型参数。
-     ```cpp
-     template<typename... Args>  // Args 是类型参数包
-     struct Tuple {};
+- **模板参数包**：用 `...` 表示，允许模板接受任意数量的类型参数。
+```cpp
+template<typename... Args>  // Args 是类型参数包
+struct Tuple {};
 
-     Tuple<int, double, std::string> t;  // 合法，参数包包含3个类型
-     ```
-   - **函数参数包**：用 `...` 修饰参数，允许函数接受任意数量的参数。
-     ```cpp
-     template<typename... Args>
-     void print(Args... args) {  // args 是函数参数包
-         // 实现见下文
-     }
-     ```
+Tuple<int, double, std::string> t;  // 合法，参数包包含3个类型
+```
+- **函数参数包**：用 `...` 修饰参数，允许函数接受任意数量的参数。
+```cpp
+template<typename... Args>
+void print(Args... args) {  // args 是函数参数包
+   // 实现见下文
+}
+```
 
-2. **参数包展开（Pack Expansion）**
-   - 通过 `...` 展开参数包，将其分解为独立的参数。
-   - 展开方式包括递归、折叠表达式（C++17）等。
+1. **参数包展开（Pack Expansion）**
+- 通过 `...` 展开参数包，将其分解为独立的参数。
+- 展开方式包括递归、折叠表达式（C++17）等。
 
 
 ### **递归展开参数包**
@@ -75,32 +75,52 @@ int main() {
 
 ### **应用场景**
 1. **实现类型安全的 `printf`**
-   ```cpp
-   template<typename... Args>
-   void printf(const char* fmt, Args... args) {
-       // 使用折叠表达式处理格式化字符串和参数
-   }
-   ```
+```cpp
+void printf(const char *s)
+{
+    while (*s)
+    {
+        if (*s == '%' && *(++s) != '%')
+            throw std::logic_error("invalid format string: missing arguments");
+        std::cout << *s++;
+    }
+}
+template <typename T, typename... Args>
+void printf(const char *s, T value, Args... args)
+{
+    while (*s)
+    {
+        if (*s == '%' && *(++s) != '%')
+        {
+            std::cout << value;
+            printf(++s, args...);
+            return;
+        }
+        std::cout << *s++;
+    }
+    throw std::logic_error("extra arguments provided to printf");
+}
+```
 
 2. **元组（Tuple）实现**
-   ```cpp
-   template<typename... Args>
-   struct Tuple {};
+```cpp
+template<typename... Args>
+struct Tuple {};
 
-   template<typename Head, typename... Tail>
-   struct Tuple<Head, Tail...> : Tuple<Tail...> {
-       Head value;
-       Tuple(Head h, Tail... t) : Tuple<Tail...>(t...), value(h) {}
-   };
-   ```
+template<typename Head, typename... Tail>
+struct Tuple<Head, Tail...> : Tuple<Tail...> {
+    Head value;
+    Tuple(Head h, Tail... t) : Tuple<Tail...>(t...), value(h) {}
+};
+```
 
 3. **转发参数到其他函数**
-   ```cpp
-   template<typename... Args>
-   void forward(Args&&... args) {
-       other_function(std::forward<Args>(args)...);
-   }
-   ```
+```cpp
+template<typename... Args>
+void forward(Args&&... args) {
+    other_function(std::forward<Args>(args)...);
+}
+```
 
 
 ### **注意事项**
@@ -131,3 +151,7 @@ int main() {
 + tuple测试
 
 ![](image/resultTestVaridicTemplateTuple.png)
+
++ printf测试
+
+![](image/resultTestPrintf.png)

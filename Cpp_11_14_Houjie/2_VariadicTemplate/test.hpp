@@ -36,12 +36,20 @@ void testVariadicTemplateTuple()
     cout << t.head() << endl;               // 输出 42
     cout << t.tail().head() << endl;        // 输出 3.14
     cout << t.tail().tail().head() << endl; // 输出 "hello"
-    cout << "==========================================" << endl;
+    cout << "==========================================" << endl
+         << endl;
 }
 
+void testPrintf()
+{
+    cout << "------------TestPrintf-------------" << endl;
+    printf("Hello, %s! You have %d new messages.\n", "Alice", 5);
+    cout << "==========================================" << endl;
+}
 void test()
 {
     testVaridicTemplatePrintX();
     testVariadicTemplateHash();
     testVariadicTemplateTuple();
+    testPrintf();
 }
