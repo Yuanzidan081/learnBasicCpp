@@ -57,15 +57,15 @@ void basic_decltype_deduction()
     decltype((a)) t6 = a;       // t6: int&（双层括号表示左值表达式，推导为引用）
     decltype(100) t7 = 400;     // t7: int（右值表达式，推导为原始类型）
 
-    std::cout << "t5 type: " << typeid(t5).name() << " (int，a+b的类型)" << std::endl;
-    std::cout << "t6 type: " << typeid(t6).name() << " (int&，左值表达式推导为引用)" << std::endl;
-    std::cout << "t7 type: " << typeid(t7).name() << " (int，右值表达式)" << std::endl;
+    std::cout << "t5 type: " << typeid(t5).name() << " (int,a+b的类型)" << std::endl;
+    std::cout << "t6 type: " << typeid(t6).name() << " (int&,左值表达式推导为引用)" << std::endl;
+    std::cout << "t7 type: " << typeid(t7).name() << " (int,右值表达式)" << std::endl;
 
     // 1.3 类成员推导（无需实例化对象）
     std::map<std::string, float> coll;
     // 等价于 std::map<std::string, float>::value_type
     decltype(coll)::value_type elem = {"test", 3.14f};
-    std::cout << "elem type: pair<const string, float>，值：" << elem.first << " " << elem.second << std::endl;
+    std::cout << "elem type: pair<const string, float>值：" << elem.first << " " << elem.second << std::endl;
 
     auto cmp = [](const Person &x, const Person &y)
     { return x.lastName < y.lastName || (x.lastName == y.lastName && x.firstName < y.firstName); };
@@ -101,11 +101,11 @@ void test_return_type_deduction()
 
     // 传统写法缺陷：返回类型是int，3.14被截断
     auto res_trad = add_traditional(x, y);
-    std::cout << "传统加法结果：" << res_trad << "，类型：" << typeid(res_trad).name() << " (int，精度丢失)" << std::endl;
+    std::cout << "传统加法结果:" << res_trad << ",类型:" << typeid(res_trad).name() << "(int精度丢失)" << std::endl;
 
     // 现代写法：返回类型是double，保留精度
     auto res_modern = add_modern(x, y);
-    std::cout << "现代加法结果：" << res_modern << "，类型：" << typeid(res_modern).name() << " (double，精度保留)" << std::endl;
+    std::cout << "现代加法结果:" << res_modern << ",类型:" << typeid(res_modern).name() << "(double精度保留)" << std::endl;
 
     std::cout << std::endl;
 }
@@ -127,7 +127,7 @@ void test_lambda_type()
     // 用decltype获取Lambda类型，实现Lambda拷贝
     decltype(lambda) lambda_copy = lambda;
     int res = lambda_copy(10);
-    std::cout << "Lambda调用结果：" << res << "（类型推导自decltype(lambda)）" << std::endl;
+    std::cout << "Lambda调用结果:" << res << "(类型推导自decltype(lambda))" << std::endl;
 
     std::cout << std::endl;
 }
@@ -156,10 +156,10 @@ void test_simplify_complex_type()
         using MapType = std::remove_const_t<std::remove_reference_t<decltype(elem)>>;
         MapType::key_type key = 1;
         MapType::mapped_type val = "test";
-        std::cout << "map key类型：" << typeid(key).name() << " (int)，value类型：" << typeid(val).name() << " (string)" << std::endl;
+        std::cout << "map key类型:" << typeid(key).name() << " (int),value类型:" << typeid(val).name() << " (string)" << std::endl;
     }
 
-    std::cout << "it1与it2类型是否一致：" << (typeid(it1) == typeid(it2) ? "是" : "否") << std::endl;
+    std::cout << "it1与it2类型是否一致:" << (typeid(it1) == typeid(it2) ? "Yes" : "No") << std::endl;
     std::cout << std::endl;
 }
 
@@ -212,10 +212,10 @@ void compare_auto_decltype()
     auto &d = a;         // d: const int&（auto+&显式保留引用）
     decltype((a)) e = a; // e: const int&（双层括号推导左值引用）
 
-    std::cout << "auto b = a → b类型：" << typeid(b).name() << " (int，丢弃const/引用)" << std::endl;
-    std::cout << "decltype(a) c = a → c类型：" << typeid(c).name() << " (const int&，保留特性)" << std::endl;
-    std::cout << "auto& d = a → d类型：" << typeid(d).name() << " (const int&，显式保留引用)" << std::endl;
-    std::cout << "decltype((a)) e = a → e类型：" << typeid(e).name() << " (const int&，左值表达式)" << std::endl;
+    std::cout << "auto b = a → b类型:" << typeid(b).name() << " (int,丢弃const/引用)" << std::endl;
+    std::cout << "decltype(a) c = a → c类型:" << typeid(c).name() << " (const int&,保留特性)" << std::endl;
+    std::cout << "auto& d = a → d类型:" << typeid(d).name() << " (const int&,显式保留引用)" << std::endl;
+    std::cout << "decltype((a)) e = a → e类型:" << typeid(e).name() << " (const int&,左值表达式)" << std::endl;
 
     std::cout << std::endl;
 }
