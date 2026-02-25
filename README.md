@@ -1,8 +1,16 @@
 **LearnBasicCpp**：记录学习C++的学习笔记和相关代码。
 
 测试编译器：
-+ g++7.3.0 
-+ msvc2019
++ g++ 7.3.0 
+```bash
+cmake -S . -B build -G "Unix Makefiles"
+cmake --build build
+```
++ MSVC 2019
+```bash
+cmake -S . -B build -G "Visual Studio 16 2019"
+cmake --build build
+````
 
 # [C++11/14标准](./Cpp_11_14_Houjie)
 
