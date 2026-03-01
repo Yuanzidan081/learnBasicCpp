@@ -1,4 +1,4 @@
-**LearnBasicCpp**：记录学习C++的学习笔记和相关代码。
+**LearnBasicCpp**：记录学习C++的笔记和相关代码。
 
 测试编译器：
 + g++ 7.3.0 
@@ -32,6 +32,7 @@ cmake --build build
   
 #  [内存管理](./MemoryManagement_Houjie)
 
++ [x] [1_memoryPrimitives](./MemoryManagement_Houjie/1_memoryPrimitives)  
 ## Reference
 
 ### Blogs and Books
