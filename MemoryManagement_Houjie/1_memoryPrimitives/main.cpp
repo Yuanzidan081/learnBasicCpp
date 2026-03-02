@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <cstdlib>
+#include <new>
 #if __GNUC__
 #include "ext/pool_allocator.h"
 #endif
@@ -90,6 +91,18 @@ int main()
         cout << "buf=" << buf << " tmp=" << tmp << endl;
         delete[] buf; // dtor 3 times
         // delete buf; // dtor once, may cause memory leak and error!
+    }
+
+    // Test 4: placement new
+    {
+        cout << "--- Test 4: placement new ---" << endl;
+        char *buf = new char[sizeof(A) * 3];
+        A *pa = new (buf) A(1);
+        A *pb = new (buf + sizeof(A)) A(2);
+        A *pc = new (buf + sizeof(A) * 2) A(3);
+        cout << "pa->id=" << pa->id << " pb->id=" << pb->id << " pc->id=" << pc->id << endl;
+
+        delete[] buf;
     }
     system("pause");
     return 0;

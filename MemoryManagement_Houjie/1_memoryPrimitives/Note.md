@@ -100,7 +100,7 @@ void _cdecl operator delete(void* p) _THROW0()
 }
 ```
 
-### 1.2.2 `array new`和`array delete`
+#### 1.2.2 `array new`和`array delete`
 
 `array new`（数组new）和 `array delete`（数组delete）是 C++ 专门用于动态数组内存分配 / 释放的语法，是普通 new/delete 的数组版本，必须严格成对使用。
 
@@ -127,6 +127,33 @@ delete[] ptr; // array delete
 + 调用 `::operator delete[]` 释放原始内存；
 + 清空指针（建议操作：`ptr = nullptr`）。
 
+#### 1.2.3 `placement new`
+
+`placement new`允许我们将对象建立在已经分配的内存上：
+
+```cpp
+#include <new>
+char* buf = new char[sizeof(Complex) * 3];
+Complex* pc = new (buf) Complex(1, 2);
+...
+delete [] buf;
+```
+
+编译器会翻译为：
+
+```cpp
+Complex* pc;
+try {
+    void* p = ::operator new(sizeof(Complex), buf); // 调用void* operator new(size_t, void*)
+    p = static_cast<Complex*>(p);
+    // pc->Complex::Complex(1, 2); // 编译器才可以这样调用 Complex 的构造函数
+    ::new(p) Complex(1, 2); // 调用 Complex 的构造函数,
+}
+catch (std::bad_alloc) {
+    // 若allocation失败就不执行构造函数
+    throw std::bad_alloc();
+}
+```
 
 ### 1.3 `::operator new()` / `::operator delete()` —— C++ 底层内存函数
 - **归属**：C++ 标准库函数（`<new>`）
@@ -277,3 +304,6 @@ msvc测试：
 ![](./image/resultMemoryPrimitives_array_new_delete_abnormal.png)
 ![](./image/resultMemoryPrimitives_array_new_delete_memoryleak.png)
 
++ 测试4：**placement new**
+
+![](./image/resultMemoryPrimitives_placement_new.png)
