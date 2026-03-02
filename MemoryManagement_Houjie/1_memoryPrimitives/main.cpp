@@ -16,10 +16,20 @@ public:
     A(int i) : id(i) { cout << "ctor. this = " << this << " id = " << id << endl; }
     ~A() { cout << "dtor. this = " << this << endl; }
 };
+
+class B
+{
+public:
+    int id;
+    B() : id(0) { cout << "default ctor. this = " << this << " id = " << id << endl; }
+    B(int i) : id(i) { cout << "ctor. this = " << this << " id = " << id << endl; }
+    ~B() { cout << "dtor. this = " << this << " id = " << id << endl; }
+};
 int main()
 {
     // Test 1: malloc, free, new, delete, operator new, operator delete, allocator
     {
+        cout << "--- Test 1: malloc, free, new, delete, operator new, operator delete, allocator ---" << endl;
         void *p1 = malloc(512);
         std::cout << "malloc: " << p1 << std::endl;
         free(p1);
@@ -51,6 +61,7 @@ int main()
 
     // Test 2: constructor, destructor
     {
+        cout << "--- Test 3: constructor, destructor ---" << endl;
         string *pstr = new string("hello");
         std::cout << "str=" << *pstr << endl;
 
@@ -67,6 +78,18 @@ int main()
 #endif
         std::cout << pa->id << endl;
         delete pa;
+    }
+
+    // Test 3: array new and delete
+    {
+        B *buf = new B[3];
+        B *tmp = buf;
+        cout << "buf=" << buf << endl;
+        for (int i = 0; i < 3; ++i)
+            new (tmp++) B(i);
+        cout << "buf=" << buf << " tmp=" << tmp << endl;
+        delete[] buf; // dtor 3 times
+        // delete buf; // dtor once, may cause memory leak and error!
     }
     system("pause");
     return 0;

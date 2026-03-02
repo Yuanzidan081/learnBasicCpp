@@ -100,6 +100,33 @@ void _cdecl operator delete(void* p) _THROW0()
 }
 ```
 
+### 1.2.2 `array new`和`array delete`
+
+`array new`（数组new）和 `array delete`（数组delete）是 C++ 专门用于动态数组内存分配 / 释放的语法，是普通 new/delete 的数组版本，必须严格成对使用。
+
+```cpp
+T* ptr = new T[N]; // array new 
+delete[] ptr; // array delete
+```
+
+`array new`分配能容纳 N 个 T 类型对象的内存，并调用N 次 T 的默认构造函数，而`array delete`调用N 次 T 的析构函数，再释放数组占用的内存。
+
+注意`delete[]` 末尾的 [] 是识别 “数组释放” 的核心标记，如果缺失会当作普通指针的`delete`，只会调用一次析构函数，可能造成内存泄露（如果T是还有指针的对象）甚至未定义行为。
+
+`array new`底层行为：
+
++ 计算总内存大小；
++ 调用 `::operator new[]` 分配原始内存（数组版底层分配函数）；
++ 对数组中每个元素调用构造函数；
++ 返回数组首元素的指针。
+
+`array delete`底层行为：
+
++ 编译器根据数组元信息（存储在内存块头部）确定数组长度 N；
++ 对数组中每个元素调用析构函数；
++ 调用 `::operator delete[]` 释放原始内存；
++ 清空指针（建议操作：`ptr = nullptr`）。
+
 
 ### 1.3 `::operator new()` / `::operator delete()` —— C++ 底层内存函数
 - **归属**：C++ 标准库函数（`<new>`）
@@ -238,4 +265,15 @@ g++测试
 msvc测试：
 
 ![](./image/resultMemoryPrimitives_msvc_2.png)
+
++ 测试3：**数组new & delete**
+
+正常`array new`和`array delete`行为（下面是用g++测试的）：
+
+![](./image/resultMemoryPrimitives_array_new_delete_normal.png)
+
+`array delete`没有加上`[]`，实测g++不会报错，但是msvc会报错（下面是用msvc测试的）：
+
+![](./image/resultMemoryPrimitives_array_new_delete_abnormal.png)
+![](./image/resultMemoryPrimitives_array_new_delete_memoryleak.png)
 
