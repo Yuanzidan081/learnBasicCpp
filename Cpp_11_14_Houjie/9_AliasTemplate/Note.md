@@ -85,6 +85,6 @@ int main()
 
 通过Alias Template优化后，代码不仅修复了原有的模板语法错误，还变得更简洁、易维护，这也是Alias Template在实际开发中的核心应用场景。
 
-+ 9_AliasTemplate测试
++ 9_aliasTemplate测试
 
 ![](./image/resultAliasTemplate.png)
