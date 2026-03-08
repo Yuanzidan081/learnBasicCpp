@@ -33,7 +33,8 @@ cmake --build build
 #  [内存管理](./MemoryManagement_Houjie)
 
 + [x] [1_memoryPrimitives](./MemoryManagement_Houjie/1_memoryPrimitives)    
-+ [x] [2_overloadOperatorNewDelete](./MemoryManagement_Houjie/2_overloadOperatorNewDelete) 
++ [x] [2_overloadOperatorNewDelete](./MemoryManagement_Houjie/2_overloadOperatorNewDelete)
++ [x] [3_perClassAllocator](./MemoryManagement_Houjie/3_perClassAllocator)  
 ## Reference
 
 ### Blogs and Books
