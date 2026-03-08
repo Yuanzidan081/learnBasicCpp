@@ -92,6 +92,29 @@ public:
 };
 ```
 
+一般的，使用`new`一个类，会使用类里的`operator new`，如果类里没有定义`operator new`，则会使用全局的`operator new`。如果在`new`前面加上`::`，则会使用全局的`operator new`（如果这个全局的`operator new`没有定义重载，就会使用系统默认的`operator new`）。
+
+类内重载还可以进行`placement new`，即指定内存地址分配。它的语法格式为：
+
+```cpp
+// 基础格式：在 ptr 指向的内存地址构造 T 类型对象
+new (ptr) T;
+
+// 带参数格式：在 ptr 指向的内存地址构造 T 类型对象，并传递参数给构造函数
+new (ptr) T(args...);
+
+// 扩展格式：支持多参数传递（参数会被传递给 operator new 的重载版本）
+new (arg1, arg2, ...) T(args...);
+```
+
+重载`operator new`必须满足的条件是：
+
++ 第一个参数固定为 size_t size（对象内存大小，编译器自动传递）；
++ 后续参数为自定义参数（与调用时的 (arg1, arg2...) 匹配）；
++ 返回值为 void*（构造对象的内存地址）。
+
+如果`operator new`返回的内存是在栈上分配的，那么不能直接使用`delete`来释放内存。
+
 #### 代码示例（类内重载）
 ```cpp
 class Foo
@@ -135,53 +158,6 @@ public:
 1. **类内重载 > 全局重载 > 系统默认**：若类定义了专属的 `operator new`，则该类对象的内存分配优先使用类内版本；未定义则使用全局重载；全局未重载则使用系统默认版本。
 2. **显式指定全局版本**：通过 `::operator new` 可强制调用全局重载（跳过类内版本）。
 
-### 2.2 代码调用示例与输出解析
-```cpp
-int main()
-{
-    // 场景1：直接调用全局 operator new/delete
-    void *p = operator new(sizeof(int));  // 输出：my global new()
-    operator delete(p);                   // 输出：my global delete()
-
-    // 场景2：显式调用全局 operator new[]/delete[]
-    void *p2 = ::operator new[](sizeof(int) * 10); // 输出：my global new[]()
-    ::operator delete[](p2);                        // 输出：my global delete[]()
-
-    // 场景3：Foo 对象 new/delete（调用类内重载）
-    Foo *p3 = new Foo;  // 输出：Foo global new() → Foo ctor
-    delete p3;          // 输出：Foo dtor → Foo global delete()
-
-    // 场景4：Foo 数组 new[]/delete[]（调用类内重载）
-    Foo *p4 = new Foo[3]; // 输出：Foo global new[]() → Foo ctor ×3
-    delete[] p4;         // 输出：Foo dtor ×3 → Foo global delete[]()
-    return 0;
-}
-```
-
-#### 输出结果（完整）
-```
-my global new()
-my global delete()
-my global new[]()
-my global delete[]()
-Foo global new()
-Foo ctor
-Foo dtor
-Foo global delete()
-Foo global new[]()
-Foo ctor
-Foo ctor
-Foo ctor
-Foo dtor
-Foo dtor
-Foo dtor
-Foo global delete[]()
-```
-
-#### 关键解析
-- 场景1/2：直接调用全局重载函数，无对象构造/析构（仅内存分配/释放）；
-- 场景3：`new Foo` 先调用 Foo 类内 `operator new` 分配内存，再调用 Foo 构造函数；`delete p3` 先调用析构函数，再调用类内 `operator delete`；
-- 场景4：`new Foo[3]` 调用 Foo 类内 `operator new[]`（size 包含数组元信息 + 3个Foo大小），再调用3次构造函数；`delete[] p4` 先调用3次析构函数，再调用类内 `operator delete[]`。
 
 ## 3. 重载的核心注意事项
 ### 3.1 函数签名不可修改
