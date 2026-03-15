@@ -12,7 +12,7 @@ cmake -S . -B build -G "Visual Studio 16 2019"
 cmake --build build
 ````
 
-# [C++11/14标准](./Cpp_11_14_Houjie)
+# 1. [C++11/14标准](./Cpp_11_14_Houjie)
 
 + [x] [1_start](./Cpp_11_14_Houjie/1_start)
 + [x] [2_variadicTemplate](./Cpp_11_14_Houjie/2_variadicTemplate)
@@ -22,7 +22,7 @@ cmake --build build
 + [x] [6_explicitCtors](./Cpp_11_14_Houjie/6_explicitCtors)
 + [x] [7_rangeBasedForStatement](./Cpp_11_14_Houjie/7_rangeBasedForStatement)
 + [x] [8_defaultAndDeleteInClass](./Cpp_11_14_Houjie/8_defaultAndDeleteInClass)
-+ [x] [9_AliasTemplate](./Cpp_11_14_Houjie/9_AliasTemplate)
++ [x] [9_aliasTemplate](./Cpp_11_14_Houjie/9_aliasTemplate)
 + [x] [10_templateTemplateParameter](./Cpp_11_14_Houjie/10_templateTemplateParameter)
 + [x] [11_typeAliasAndNoexceptAndOverrideAndFinal](./Cpp_11_14_Houjie/11_typeAliasAndNoexceptAndOverrideAndFinal)
 + [x] [12_decltype](./Cpp_11_14_Houjie/12_decltype)
@@ -30,7 +30,7 @@ cmake --build build
 + [x] [14_rightValue](./Cpp_11_14_Houjie/14_rightValue)
 + [x] [15_perfectForwarding](./Cpp_11_14_Houjie/15_perfectForwarding)
   
-#  [内存管理](./MemoryManagement_Houjie)
+#  2. [内存管理](./MemoryManagement_Houjie)
 
 + [x] [1_memoryPrimitives](./MemoryManagement_Houjie/1_memoryPrimitives)    
 + [x] [2_overloadOperatorNewDelete](./MemoryManagement_Houjie/2_overloadOperatorNewDelete)
