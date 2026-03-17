@@ -141,6 +141,28 @@ public:
     }
 };
 
+class FooOperatorOverloadDefaultDelete
+{
+private:
+    int id;
+
+public:
+    FooOperatorOverloadDefaultDelete() : id(0) { cout << "FooOperatorOverloadDelete ctor(), this = " << this << endl; }
+
+public:
+// 要求编译器生成默认的类成员版 operator new
+#ifdef _MSC_VER
+    static void *operator new(std::size_t size) noexcept(false);
+    static void operator delete(void *ptr) noexcept;
+#endif
+    // 错误写法：测试g++和MSVC都编译报错
+    // static void *operator new(size_t size) noexcept(false) = default; // default;
+    // static void operator delete(void *ptr) noexcept = default;        // default;
+
+    static void *operator new[](size_t size) noexcept(false) = delete; // delete;
+    static void operator delete[](void *ptr) noexcept = delete;
+};
+
 int main()
 {
     {
@@ -192,6 +214,13 @@ int main()
         FooOperatorOverload *p5 = new (&start) FooOperatorOverload(100);
         std::cout << p2->GetId() << std::endl;
         std::cout << p5->GetId() << std::endl;
+    }
+
+    {
+        FooOperatorOverloadDefaultDelete *p1 = new FooOperatorOverloadDefaultDelete; // 编译错误，operator new被删除了
+        delete p1;                                                                   // 编译错误，operator delete被删除了
+        // FooOperatorOverloadDefaultDelete *p2 = new FooOperatorOverloadDefaultDelete[3]; // 编译错误，operator new被删除了
+        // delete[] p2;                                                                    // 编译错误，operator delete被删除了
     }
     return 0;
 }

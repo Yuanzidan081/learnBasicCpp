@@ -37,6 +37,8 @@ cmake --build build
 + [x] [3_perClassAllocator](./MemoryManagement_Houjie/3_perClassAllocator) 
 + [x] [4_perClassAllocator2](./MemoryManagement_Houjie/4_perClassAllocator2)
 + [x] [5_staticAllocator](./MemoryManagement_Houjie/5_staticAllocator)
++ [x] [6_staticAllocatorMacro](./MemoryManagement_Houjie/6_staticAllocatorMacro)
++ [x] [7_newhandlerAndNothrow](./MemoryManagement_Houjie/7_newhandlerAndNothrow)  
 ## Reference
 
 ### Blogs and Books

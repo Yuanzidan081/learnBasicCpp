@@ -222,8 +222,33 @@ void* operator new(size_t size) {
     return aligned_alloc(16, (size + 15) & ~15);
 }
 ```
+## 5. 其他
 
-## 5. 核心总结
+### 5.1 重载 operator new/delete 时可以使用default和delete嘛
+
+语法示例：
+
+```cpp
+class Test {
+public:
+    // 要求编译器生成默认的类成员版 operator new
+#ifdef _MSC_VER
+    static void* operator new(size_t size) noexcept(false);
+    static void operator delete(void* ptr) noexcept;
+#endif
+    // 数组版本同理
+    static void* operator new[](size_t size) noexcept(false) = delete;
+    static void operator delete[](void* ptr) noexcept = delete;
+
+    int data = 10;
+};
+```
+
+ `operator new/delete`经过测试不能使用`default`，在MSVC可以直接声明不定义，这样就使用默认的版本，但是在g++上就不能这样声明不定义，可以去掉就不会报错。而使用`delete`是合法的，使用了`delete`相关的`new`/`delete`就不能使用了。上面的`noexcept(false)`表示可能慧抛出异常。
+
+
+
+## 6. 核心总结
 1. `operator new/delete` 是 `new/delete` 关键字的底层实现，分为普通版（单个对象）和数组版（`new[]/delete[]`）；
 2. 重载分为「全局版」（作用于所有对象）和「类内版」（仅作用于该类对象），类内版本优先级更高；
 3. 调用规则：`new T` → `operator new(sizeof(T))` + 构造函数；`delete p` → 析构函数 + `operator delete(p)`；
