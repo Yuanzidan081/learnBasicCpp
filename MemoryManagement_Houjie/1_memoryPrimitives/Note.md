@@ -204,7 +204,17 @@ catch (std::bad_alloc) {
   - `allocator<T>` 本身不负责对象的构造与析构，需配合 `std::construct` / `std::destroy` 使用。
   - 自定义分配器（如内存池、栈分配器）是高性能 C++ 程序的常见优化手段。
 
+#### `allocator`不同的实现
 
+VC6/BC5/G2.9实现的标准库的allocator的`allocate`和`deallocate`底层就是`::operator new()` / `::operator delete()`，没有任何的特殊设计。
+
+![](./image/VC6_allocator_implement.png)
+
+![](./image/BC5_allocator_implement.png)
+
+![](./image/G2.9_allocator_implement.png)
+
+注意G2.9的标准库并没有用`allocator`，而是用的`alloc`。
 ## 2. 核心对比与总结
 
 | 分配/释放方式                               | 归属       | 核心行为                                  | 是否可重载             | 典型应用场景                          |
