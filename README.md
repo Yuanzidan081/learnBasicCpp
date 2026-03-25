@@ -1,24 +1,17 @@
-**LearnBasicCpp**：记录学习C++的笔记和相关代码。
+# LearnBasicCpp
 
-测试编译器：
-+ g++ 7.3.0 
-```bash
-cmake -S . -B build -G "Unix Makefiles"
-cmake --build build
-```
-+ MSVC 2019
-```bash
-cmake -S . -B build -G "Visual Studio 16 2019"
-cmake --build build
-````
+记录个人学习C++的笔记和相关代码。
 
-封装成了Makefile指令：
+测试操作系统为Win10，测试编译器包括g++ 7.3.0和MSVC 2019。
+
+
+将编译封装乘了Makefile指令，可以方便地进行测试：
 
 ```bash
-make clean # clean CMakeCache.txt
-make msvc2019 # cmake -S . -B build -G "Visual Studio 16 2019"
-make g++ # cmake -S . -B build -G "Unix Makefiles"
-make bb # cmake --build build
+make clean          # clean CMakeCache.txt
+make msvc2019       # cmake -S . -B build -G "Visual Studio 16 2019"
+make g++            # cmake -S . -B build -G "Unix Makefiles"
+make bb             # cmake --build build
 ```
 
 
