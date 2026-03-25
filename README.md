@@ -12,6 +12,16 @@ cmake -S . -B build -G "Visual Studio 16 2019"
 cmake --build build
 ````
 
+封装成了Makefile指令：
+
+```bash
+make clean # clean CMakeCache.txt
+make msvc2019 # cmake -S . -B build -G "Visual Studio 16 2019"
+make g++ # cmake -S . -B build -G "Unix Makefiles"
+make bb # cmake --build build
+```
+
+
 # 1. [C++11/14标准](./Cpp_11_14_Houjie)
 
 + [x] [1_start](./Cpp_11_14_Houjie/1_start)
@@ -39,6 +49,8 @@ cmake --build build
 + [x] [5_staticAllocator](./MemoryManagement_Houjie/5_staticAllocator)
 + [x] [6_staticAllocatorMacro](./MemoryManagement_Houjie/6_staticAllocatorMacro)
 + [x] [7_newhandlerAndNothrow](./MemoryManagement_Houjie/7_newhandlerAndNothrow)  
++ [x] [8_G2.9std_alloc_G4.9pool_alloc_G4.9allocator](./MemoryManagement_Houjie/8_G2.9std_alloc_G4.9pool_alloc_G4.9allocator) 
+
 ## Reference
 
 ### Blogs and Books
