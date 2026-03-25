@@ -7,10 +7,12 @@ set(SRC_DIR_LIST
         ${CMAKE_SOURCE_DIR}/Cpp_11_14_Houjie
         ${CMAKE_SOURCE_DIR}/MemoryManagement_Houjie
     )
-
+set(IGNORE_NAME Other)
 foreach(SRC_DIR ${SRC_DIR_LIST})
     file(GLOB SRC_SUBDIR_LIST RELATIVE ${SRC_DIR} ${SRC_DIR}/*) # 获取文件夹下的文件夹的名字
     foreach(SRC_SUBDIR ${SRC_SUBDIR_LIST})
-        add_subdirectory(${SRC_DIR}/${SRC_SUBDIR})
+        if (NOT ${SRC_SUBDIR} STREQUAL ${IGNORE_NAME})
+            add_subdirectory(${SRC_DIR}/${SRC_SUBDIR})
+        endif()
     endforeach()
 endforeach()

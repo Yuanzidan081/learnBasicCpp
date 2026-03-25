@@ -150,11 +150,11 @@ public:
     FooOperatorOverloadDefaultDelete() : id(0) { cout << "FooOperatorOverloadDelete ctor(), this = " << this << endl; }
 
 public:
-// 要求编译器生成默认的类成员版 operator new
-#ifdef _MSC_VER
-    static void *operator new(std::size_t size) noexcept(false);
-    static void operator delete(void *ptr) noexcept;
-#endif
+    // 要求编译器生成默认的类成员版 operator new
+
+    // static void *operator new(std::size_t size) noexcept(false); // 编译报错
+    // static void operator delete(void *ptr) noexcept; // 编译报错
+
     // 错误写法：测试g++和MSVC都编译报错
     // static void *operator new(size_t size) noexcept(false) = default; // default;
     // static void operator delete(void *ptr) noexcept = default;        // default;
