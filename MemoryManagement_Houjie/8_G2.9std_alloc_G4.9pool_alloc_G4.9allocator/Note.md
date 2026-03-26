@@ -21,7 +21,11 @@ private:
     ...
 };
 
+// 令第2级的配器d名称为alloc
 typedef __default_alloc_template<false, 0> alloc;
+
+template <bool threads, int inst>
+__default_alloc_template <threads, inst>::obj* volatile __default_alloc_template <threads, inst>::free_list[__NFREELISTS] = {0};
 
 template <bool threads, int inst>
 char* __default_alloc_template <threads, inst>::chunk_alloc(size_t size, int& nobjs)
@@ -171,6 +175,70 @@ return (chunk_alloc(size, nobjs));  // 递归调用，重新分配
 3. 代码逻辑：内存池够用 → 不够用 → 系统申请 → 失败自救 → 重试分配
 4. 是 C++ STL 高性能内存管理的经典实现
 
+## `alloc`内存管理的设计
+
+总览图为：
+
+![](./image/std_alloc_runmode.png)
+
+设计了两个内存分配器，注意内存分配器的对象不是给应用程序的，而是给容器的，`free_list`共有16个元素，第一个元素指向大小为8字节的自由链表，第二个元素指向大小为16字节的自由链表，以此类推。每个自由链表的头节点指向下一个空闲内存块。当第一次申请了一个32字节的内存比如`vector<T, alloc> v{...}`，其中`sizeof(T)=32`，那么底层会分配20个32字节的内存（20是一个经验数字），第一个给客户，剩下的19个接在`free_list[3]`后面，考虑后续还有申请，实际会预留20个32字节的内存但是未分配出去，假如下次又来创建元素是64字节的容器，由于前面有预留，实际上会有`32*20/64=10`个内存块，同样第一个给客户，后面的接在`free_list[7]`后面，下一次如果又要创建96字节的容器，由于之前申请的内存都用了，会重新申请20个96字节的内存（同样会多申请20个），第一个给客户，后面的接在`free_list[11]`后面。`free_list`最后一个元素后接的是128字节的内存块，如果申请的内存超过这个数那么就走`malloc`。如果的请d内存不是8的倍数，也会向上取整，比如申请5字节，取整为8字节，使用`free_list[0]`。
+
+![](./image/std_alloc_1.png)
+
+请记住内存分配器的对象不是应用程序，否则应用程序就必须记住要申请的内存大小是多少，还回去也要记住还多少，这是令人恼火的事。实际对象是容器，因为容器记录着每个元素的大小。
+
+具体来说上面的例子用下面的图来形象地描述：
+
+假设内存池（视频称为战备池pool）的大小是x字节，要申请的容器的元素大小为y字节，如果pool里没有了余量，那么就会申请新的内存，计算公式为：$y\times20\times2+RoundUp(y >> 4)$
+
+
+![](./image/std_alloc_2.png)
+
+容器申请元素大小32，当前pool为空，累计申请量为$32\times20\times2+RoundUp(0>>4)=1280$字节。用掉$32\times20=640$字节。pool剩余大小为640字节。
+
+![](./image/std_alloc_3.png)
+
+容器申请元素大小为64，当前pool累计申请量为1280字节，还剩640字节，不足20个内存块，原则是有多少用多少，这里$6640/64=10$，所以划分10个内存块，注意切割出来的数量永远在1~20之间。pool剩余大小为0。
+
+![](./image/std_alloc_4.png)
+
+容器申请元素大小为96，当前pool还剩0字节，重新申请$96\times20\times2+RoundUp(1280>>4)=3920$字节，累计申请量为$1280+3920=5200$字节。用掉$96\times20=1920$字节。pool剩余大小为$3920-1920=2000$字节。
+
+注意新申请的会在头部带上cookie，图中也有显示。后面的申请动作也是以此类推：
+
+![](./image/std_alloc_5.png)
+
+![](./image/std_alloc_6.png)
+
+连续申请三个88的内存。
+
+![](./image/std_alloc_7.png)
+
+注意现在pool剩余80字节。
+
+![](./image/std_alloc_8.png)
+
+现在申请104,80字节不够一个内存块，先把80字节连接到`free_list[9]`后面，然后按前面的计算公式申请内存。这体现了碎片的处理。
+
+![](./image/std_alloc_9.png)
+
+![](./image/std_alloc_10.png)
+
+现在已经用掉9688字节了，假设内存的上限是10000字节，那么下一次如果分配失败会发生什么呢？
+
+![](./image/std_alloc_11.png)
+
+现在申请的是72字节，但是pool剩余24字节，不够一个内存块，先挂到`free_list[2]`后面。然后申请内存，但是达到上限！怎么办呢？所以取的接近的80字节（`free_list[9]`）回填pool，从里面切出72返给客户。而剩下8个字节。
+
+![](./image/std_alloc_12.png)
+
+![](./image/std_alloc_13.png)
+
+这次要申请k120，结果没有满足的块了！已经山穷水尽了！
+
+检讨：
+1. alloc受众可能还有一些未分给客户的内存，可以将这些小内存合成大内存给还g客户吗？技术有点难。
+2. 系统的heap可能还有多少资源呢？可不可以把失败的索取量折半折半再折半直到拿到为止呢？但似乎alloc也没有这样设计。
 
 # G4.9的__pool_alloc
 `pool_alloc`源码：
