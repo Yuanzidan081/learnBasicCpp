@@ -1,5 +1,108 @@
 # G2.9的std::alloc
 
+下面是一级分配器的源码：
+
+```cpp
+template <int inst>
+class __malloc_alloc_template {
+private:
+    static void* oom_malloc(size_t);
+    static void* oom_realloc(void*, size_t);
+    static void (*__malloc_alloc_oom_handler)();
+    // 上面这个指针用来指向new-handler(if any)
+public:
+    staic void* alloc(size_t n)
+    {
+        void* result = malloc(n);
+        if (0 == result) result = oom_malloc(n);
+        return result;
+    }
+
+    static void deallocate(void* p, size_t /* n */)
+    {
+        free(p);
+    }
+    static void* reallocate(void* p, size_t /* old_sz */, size_t new_sz)
+    {
+        void* result = realloc(p, new_sz);
+        if (o == result) result = oom_realloc(p, new_sz);
+        return result;
+    }
+    static void (*set_malloc_handler(void(*f)()))()
+    {
+        void(*old) = __malloc_alloc_oom_handler;
+        __malloc_alloc_oom_handler = f;
+        return (old);
+    }
+};
+
+template <int inst> void(*__malloc_alloc_template<inst>::__malloc_alloc_oom_handler)() = 0;
+
+template <int inst>
+void* __malloc_alloc_template<inst>::oom_malloc(size_t n)
+{
+    void (*my_malloc_handler)();
+    void* result;
+    for (;;)
+    {
+        my_malloc_handler = __malloc_alloc_oom_handler;
+        if (0 == my_alloc_handler) {__THROW_BAD_ALLOC;}
+        (*my_malloc_handler)(); // 呼叫handler，企图释放memory
+        result = malloc(n); // 再次尝试分配memory
+        if (result) return (result);
+    }
+}
+
+template <int inst>
+void* __malloc_alloc_template<inst>::oom_realloc(void* p, size_t n)
+{
+    void (*my_malloc_handler)();
+    void* result;
+    for (;;)
+    {
+        my_malloc_handler = __malloc_alloc_oom_handler;
+        if (0 == my_alloc_handler) {__THROW_BAD_ALLOC;}
+        (*my_malloc_handler)(); // 呼叫handler，企图释放memory
+        result = realloc(p, n); // 再次尝试分配memory
+        if (result) return (result);
+    }
+}
+
+typedef __malloc_alloc_template<0> malloc_alloc;
+
+```
+
+基本用例：
+
+```cpp
+
+template<class T, class Alloc>
+class simple_alloc {
+public:
+    static T* allocate(size_t n)
+    { return 0 == n ? 0 : (T*)Alloc::allocate(n * sizeof(T));}
+    static T* allocate(void)
+    { return (T*)Alloc::allocate(sizeof(T));}
+    static void deallocate(T* p, size_t n)
+    { if (0 != n) Alloc::deallocate(p, n * sizeof(T));}
+    static void deallocate(T* p)
+    { Alloc::deallocate(p, sizeof(T));}
+};
+
+template <class T, class Alloc = alloc>
+class vector
+{
+protected:
+    typedef simple_alloc<T, Alloc> data_allocator;
+    ...
+    result = data_allocator::allocate(); // 分配一个元素空间
+    data_allocator::deallocate(result);
+};
+```
+
+
+下面是二级分配器的源码：
+
 ```cpp
 enum {__ALIGN = 8};
 enum {__MAX_BYTES = 128};
@@ -9,23 +112,80 @@ template <bool threads, int inst>
 class __default_alloc_template
 {
 private:
+    // 把~(__ALIGN - 1)的低位设为0，相与后bytes的低位也为0，这样保证是__ALIGN的整数倍
+    static size_t ROUND_UP(size_t bytes) // 取整到__ALIGN的整数倍
+    {
+        return (((bytes) + __ALIGN-1) & ~(__ALIGN - 1));
+    }
+private:
     union obj {
         union obj* free_list_link;
     };
 private:
+    // bytes为8，则(8 + 7)/8 -1 = 0
+    // bytes为16，则(16 + 7)/8 - 1 = 1
+    // bytes为20，则(20 + 7)/8 - 1 = 2
+    static size_t FREELIST_INDEX(size_t bytes) // 根据bytes得到第几号链表
+    { return (((bytes) + __ALIGN - 1) / __ALIGN - 1); }
+
+    static void* refill(size_t n); // 没有内存块了就向malloc申请内存
     static obj* volatile free_list[__NFREELISTS];
     static char* start_free;
     static char* end_free;
     static size_t heap_size;
     char* chunk_alloc(size_t size, int& nobjs);
     ...
+public:
+    static void* allocate(size_t n)
+    {
+        obj* volatile* my_free_list;
+        obj* result;
+        if (n > (size_t)__MAX_BYTES)
+        {
+            return malloc_alloc::allocate(n); // 改用第一级
+        }
+
+        my_free_list = free_list + FREELIST_INDEX(n);
+        result = *my_free_list;
+        if (result == 0) // list 为空
+        {
+            void* r = refill(ROUND_UP(n)); // refill()填充free list并返回第一个区块的起始地址
+            return r;
+        }
+        *my_free_list = result->free_list_link;
+        return result;
+    }
+    // 这里的p可以不是alloc获得的，仍可回收到alloc里，如果p所指大小不是8的倍数，可能带来灾难
+    static void deallocate(void* p, size_t n)
+    {
+        obj* q = (obj*)p;
+        obj* volatile* my_free_list;
+
+        if (n > (size_t)__MAX_BYTES)
+        {
+            malloc_alloc::deallocate(p, n); // 改用第一级
+            return;
+        }
+        my_free_list = free_list + FREELIST_INDEX(n);
+        q->free_list_link = *my_free_list;
+        *my_free_list = q;
+    }
+    static void* reallocate(void* p, size_t old_size, size_t new_size); // 此处省略
 };
+
+
+template <bool threads, int inst>
+char* __default_alloc_template <threads, inst>::start_free = 0;
+template <bool threads, int inst>
+char* __default_alloc_template <threads, inst>::end_free = 0;
+template <bool threads, int inst>
+size_t __default_alloc_template <threads, inst>::heap_size = 0;
+template <bool threads, int inst>
+__default_alloc_template <threads, inst>::obj* volatile __default_alloc_template <threads, inst>::free_list[__NFREELISTS] = 
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 // 令第2级的配器d名称为alloc
 typedef __default_alloc_template<false, 0> alloc;
-
-template <bool threads, int inst>
-__default_alloc_template <threads, inst>::obj* volatile __default_alloc_template <threads, inst>::free_list[__NFREELISTS] = {0};
 
 template <bool threads, int inst>
 char* __default_alloc_template <threads, inst>::chunk_alloc(size_t size, int& nobjs)
@@ -33,22 +193,84 @@ char* __default_alloc_template <threads, inst>::chunk_alloc(size_t size, int& no
     char* result;
     size_t total_bytes = size * nobjs;
     size_t bytes_left = end_free - start_free;
-    ...
-    start_free = (char*)malloc(bytes_to_get);
-    if (0 == start_free)
+    if (bytes_left >= total_bytes)
     {
-        int i;
-        obj* volatile* my_free_list, *p;
-        for (i = size; i <= __MAX_BYTES; i += __ALIGN)
-        {
-            ...
-        }
-        end_free = 0; // in case of exception
-        start_free = (char*)malloc_alloc::allocate(bytes_to_get);
+        result = start_free;
+        start_free += total_bytes;
+        return result;
     }
-    heap_size += bytes_to_get;
-    end_free = start_free + bytes_to_get;
-    return (chunk_alloc(size, nobjs));
+    else if (bytes_left >= size)
+    {
+        nobjs = bytes_left / size;
+        total_bytes = size * nobjs;
+        result = start_free;
+        start_free += total_bytes;
+        return result;
+    }
+    else
+    {
+        size_t bytes_to_get = 2 * total_bytes + ROUND_UP(heap_size >> 4);
+        if (bytes_left > 0)
+        {
+            obj* volatile* my_free_list = free_list + FREELIST_INDEX(bytes_left);
+            ((obj*)start_free)->free_list_link = *my_free_list;
+            *my_free_list = (obj*)start_free;
+        }
+        start_free = (char*)malloc(bytes_to_get);
+        if (0 == start_free)
+        {
+            int i;
+            obj* volatile* my_free_list, *p;
+            for (i = size; i <= __MAX_BYTES; i += __ALIGN)
+            {
+                my_free_list = free_list + FREELIST_INDEX(i);
+                p = *my_free_list;
+                if (0 != p) // 有可用区块
+                {
+                    *my_free_list = p->free_list_link;
+                    // 新的战备池！start_free~end_free刚好是一个大小为i的块
+                    start_free = (char*)p;
+                    end_free = start_free + i;
+                    return chunk_alloc(size, nobjs); // 再试一次
+                }
+            }
+            end_free = 0; // in case of exception
+            start_free = (char*)malloc_alloc::allocate(bytes_to_get); // 第一级是否还有能力挽救
+        }
+        heap_size += bytes_to_get; // 累计分配量
+        end_free = start_free + bytes_to_get; // 调整尾端
+        return (chunk_alloc(size, nobjs));
+    }
+}
+
+template <bool threads, int inst>
+void* __default_alloc_template <threads, inst>::refill(size_t n) // n调整为8的倍数
+{
+    int nobjs = 20; // 不一定够
+    char* chunk = chunk_alloc(n, nobjs); // nobjs pass by reference
+    obj* volatile* my_free_list;
+    obj* result;
+    obj* current_obj;
+    obj* next_obj;
+    if (1 == nobjs) return (chunk);
+    my_free_list = free_list + FREELIST_INDEX(n);
+    result = (obj*)chunk;
+    *my_free_list = next_obj = (obj*)(chunk + n);
+    for (int i = 1; ; i++)
+    {
+        current_obj = next_obj;
+        next_obj = (obj*)((char*)current_obj + n);
+        if (nobjs - 1 == i) { // 最后yige
+            current_obj->free_list_link = 0;
+            break;
+        }
+        else
+        {
+            current_obj->free_list_link = next_obj;
+        }
+    } 
+
+    return (result);
 }
 ```
 
@@ -175,7 +397,9 @@ return (chunk_alloc(size, nobjs));  // 递归调用，重新分配
 3. 代码逻辑：内存池够用 → 不够用 → 系统申请 → 失败自救 → 重试分配
 4. 是 C++ STL 高性能内存管理的经典实现
 
-## `alloc`内存管理的设计
+
+
+## `std::alloc`内存管理的行为分析
 
 总览图为：
 
@@ -234,11 +458,91 @@ return (chunk_alloc(size, nobjs));  // 递归调用，重新分配
 
 ![](./image/std_alloc_13.png)
 
-这次要申请k120，结果没有满足的块了！已经山穷水尽了！
+这次要申请120，结果没有满足的块了！已经山穷水尽了！
 
 检讨：
 1. alloc受众可能还有一些未分给客户的内存，可以将这些小内存合成大内存给还g客户吗？技术有点难。
 2. 系统的heap可能还有多少资源呢？可不可以把失败的索取量折半折半再折半直到拿到为止呢？但似乎alloc也没有这样设计。
+
+实现：战备池申请参见`refill`函数，`refill`函数的实现参见`chunk_alloc`函数。
+
+## G2.9的`__malloc_alloc_template`和`__default_alloc_template`(一级配置器和二级配置器)总结
+
+
+`__malloc_alloc_template`和`__default_alloc_template`是 **SGI STL 内存分配器的两大核心组件**，是**一级配置器**和**二级配置器**的关系，**定位完全不同、分工明确**。
+
+
+1. **`__malloc_alloc_template` = 一级配置器**
+   **直接调用 malloc / free**，简单粗暴，不做任何内存池优化。
+
+2. **`__default_alloc_template` = 二级配置器**
+   **内存池 + 自由链表**，专门高效管理**小块内存**，是 STL 默认使用的分配器。
+
+核心区别可以用下表表示：
+
+| 特性         | **__malloc_alloc_template**（一级） | **__default_alloc_template**（二级）  |
+| :----------- | :---------------------------------- | :------------------------------------ |
+| **别名**     | 一级配置器                          | 二级配置器                            |
+| **本质**     | 对 `malloc/free` 的简单封装         | **内存池 + free_list** 高效分配       |
+| **处理大小** | 所有大小（大内存+小内存）           | **≤ 128 字节的小块内存**              |
+| **分配方式** | 直接向操作系统申请                  | 优先从**内存池/链表**取，不够再找系统 |
+| **内存碎片** | 频繁小块分配会产生碎片              | **无碎片，高度优化**                  |
+| **分配效率** | 低（频繁系统调用）                  | **极高（O(1) 链表取块）**             |
+| **异常处理** | 内存不足时调用回调函数              | 内存不足转调用一级配置器              |
+| **默认使用** | 不直接用（后备）                    | **默认使用（alloc）**                 |
+
+下面是对他们的具体解析：
+
+### 1. `__malloc_alloc_template`：一级配置器
+**定位：底层兜底、最终保障、简单直接**
+
+- 它**不做任何缓存**，直接调用系统 `malloc`、`realloc`、`free`。
+- 只做一件事：**申请不到内存时，调用用户设置的回调函数（处理内存不足）**。
+- 它是**最后的分配手段**：二级配置器搞不定时，才会找它。
+
+**一句话：它是最原始、最兜底的分配器。**
+
+
+### 2. `__default_alloc_template`：二级配置器
+**定位：高性能、小块内存专用、主力分配器**
+
+- 内部维护 **16 条自由链表**（8/16/24...128字节）
+- 内部有 **内存池**
+- 分配流程：
+  1. 先看链表有没有空闲块 → 直接拿
+  2. 链表空了 → 调用 `refill` 批量申请内存（补货）
+  3. 内存池也空了 → **转交给一级配置器**向系统申请
+
+**一句话：它是 STL 真正干活、高性能的主力分配器。**
+
+
+最后来了解一下它们的调用关系
+
+```
+用户调用 allocate()
+          ↓
+如果 **内存 ≤128 字节**
+          ↓
+→ **二级配置器（default_alloc）** 处理（内存池+链表）
+          ↓
+二级配置器不够用 / 内存 >128 字节
+          ↓
+→ **一级配置器（malloc_alloc）** 直接调用 malloc
+```
+
+总结一下：
+
+**二级是主力，一级是兜底。**
+**二级处理小块，一级处理大块。**
+
+这样设计有什么好处呢？
+
+1. **大内存**：直接用系统 `malloc` 最省事，没必要缓存。
+2. **小内存**：频繁 `malloc` 会产生大量内存碎片，效率极低。
+   → 所以用**二级配置器 + 内存池**优化。
+
+这就是 SGI STL 设计的精妙之处：
+**大小内存分开管理，兼顾效率与无碎片。**
 
 # G4.9的__pool_alloc
 `pool_alloc`源码：
